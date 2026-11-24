@@ -19,4 +19,7 @@ extern NSString * const MPDidRequestPreviewRenderNotification;
 
 @property (nonatomic, readonly) MPPreferences *preferences;
 
+/// Wraps the loaded view in one of at least the minimum pane width, centred.
+- (void)centerViewInMinimumWidth;
+
 @end
