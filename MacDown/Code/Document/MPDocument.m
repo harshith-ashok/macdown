@@ -96,6 +96,7 @@ typedef NS_ENUM(NSUInteger, MPWordCountType) {
 @property (weak) IBOutlet MPDocumentSplitView *splitView;
 @property (weak) IBOutlet NSView *editorContainer;
 @property (unsafe_unretained) IBOutlet MPEditorView *editor;
+@property (strong) MPEditorStatusController *editorStatus;
 @property (weak) IBOutlet NSLayoutConstraint *editorPaddingBottom;
 @property (weak) IBOutlet NSView *previewPlaceholder;
 @property (strong) MPPreviewController *previewController;
@@ -307,8 +308,9 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     [center addObserver:self selector:@selector(userDefaultsDidChange:)
                    name:NSUserDefaultsDidChangeNotification
                  object:[NSUserDefaults standardUserDefaults]];
-    // The YAML theme or config.yaml changed: render the preview again.
-    [center addObserver:self selector:@selector(didRequestPreviewReload:)
+    // The YAML theme or config.yaml changed: render the preview again and
+    // apply the editor features.
+    [center addObserver:self selector:@selector(didChangeConfig:)
                    name:MPThemeService.didChangeNotificationName object:nil];
     [center addObserver:self selector:@selector(editorBoundsDidChange:)
                    name:NSViewBoundsDidChangeNotification
@@ -353,6 +355,9 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
         [self setupEditor:nil];
         [self redrawDivider];
         [self reloadFromLoadedString];
+        self.editorStatus = [[MPEditorStatusController alloc]
+            initWithTextView:self.editor document:self];
+        [self.editorStatus configDidChange];
     }];
 }
 
@@ -878,8 +883,16 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 #pragma mark - Notification handler
 
+- (void)didChangeConfig:(NSNotification *)notification
+{
+    [self render:nil];
+    [self setupEditor:@"editorBaseFontInfo"];
+    [self.editorStatus configDidChange];
+}
+
 - (void)editorTextDidChange:(NSNotification *)notification
 {
+    [self.editorStatus textDidChange];
     if (self.needsHtml)
         [self.renderer parseAndRenderLater];
 }
@@ -1301,7 +1314,11 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
         self.editor.defaultParagraphStyle = [style copy];
         NSFont *font = [self.preferences.editorBaseFont copy];
         if (font)
+        {
+            font = [MPEditorStatusController
+                applyLigatures:MPFeatureSettings.ligatures to:font];
             self.editor.font = font;
+        }
         self.editor.textColor = nil;
         self.editor.backgroundColor = [NSColor clearColor];
         self.highlighter.styles = nil;

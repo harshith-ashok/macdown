@@ -29,12 +29,12 @@ Honest summary of what exists. "Engine" means the logic is written, tested and c
 | 5 KaTeX | **Done.** Bundled KaTeX 0.16.11, loaded only for pages with math. MathJax is gone. See Phase 5. |
 | 6 Mermaid, Vega-Lite | **Done, not fully re-verified.** See Phase 6. |
 | 7 Themes | **Live in the preview:** YAML themes, 9 built-in, live reload, `theme:` in `config.yaml`. Not started: editor colors from the theme, theme picker UI, converting the old Mou themes. |
-| 8 Fonts | Not started. |
+| 8 Fonts | **Partly live:** fonts from `config.yaml` (preview), ligatures switch (editor and preview code). Not started: separate editor/preview font pickers. |
 | 9 Sidebar | **Engine only:** lazy markdown tree, Quick Open matcher, FSEvents watcher, outline. No sidebar UI yet. |
-| 10 Git | **Engine only:** status, hunks, gutter markers, stage, commit, branches, remote. No UI yet. Uses the system `git`, not libgit2 (see Phase 10). |
-| 11 Lint | **Engine only:** 8 rules. No editor marks or settings yet. |
+| 10 Git | **Branch name live** in the window subtitle (toggle in Settings > Features). Engine only: hunks, gutter markers, stage, commit, branches, remote; no UI yet. Uses the system `git`, not libgit2 (see Phase 10). |
+| 11 Lint | **Live (off by default):** dotted underlines in the editor, count in the window subtitle, toggle in Settings > Features. Not done: jump-to-next warning, per-rule toggles in the UI. |
 | 12 Modern style | Not started. |
-| 13 Settings, release | Not started. `AppConfig` parses every toggle, but only `theme` is read by the app. |
+| 13 Settings, release | **Started:** Settings > Features pane (theme, ligatures, lint, git, Vega-Lite remote data) writes `config.yaml`; Rendering pane rebuilt; panes keep the toolbar visible. Not started: typed `Settings` replacing MPPreferences, migration, String Catalogs, Sparkle 2, notarization. |
 
 Branches are stacked: `modernize/phase-0-build` -> `phase-1-seams` -> `phase-2-markdown-core` -> `phase-3-engines` (latest).
 
