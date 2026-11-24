@@ -339,6 +339,11 @@ NS_INLINE BOOL MPAreNilableStringsEqual(NSString *s1, NSString *s2)
     id<MPRendererDelegate> delegate = self.delegate;
 
     NSMutableArray *stylesheets = [self.baseStylesheets mutableCopy];
+    // GitHub style alerts (> [!NOTE]) need their own styling in every theme.
+    NSURL *alertsURL = MPExtensionURL(@"alerts", @"css");
+    if (alertsURL)
+        [stylesheets addObject:[MPStyleSheet CSSWithURL:alertsURL]];
+
     if ([delegate rendererHasSyntaxHighlighting:self])
     {
         [stylesheets addObjectsFromArray:self.prismStylesheets];
