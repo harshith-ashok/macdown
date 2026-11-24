@@ -35,7 +35,8 @@ final class DocumentPreviewIntegrationTests: XCTestCase {
         renderer.parseAndRenderNow()
 
         waitUntil { (self.evaluate(preview, "document.querySelector('h1') ? document.querySelector('h1').textContent : ''") as? String) == "Hello Preview" }
-        XCTAssertEqual(evaluate(preview, "document.querySelector('pre code').className") as? String, "language-swift")
+        // Prism may add its own classes after the page loads, so check membership, not the exact string.
+        XCTAssertEqual(evaluate(preview, "document.querySelector('pre code').classList.contains('language-swift')") as? Bool, true)
         XCTAssertEqual(evaluate(preview, "document.querySelector('em').textContent") as? String, "text")
 
         // The preview shows the new text after an edit.

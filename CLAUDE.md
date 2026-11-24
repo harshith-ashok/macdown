@@ -65,7 +65,8 @@ Headless and unit tested; several are not wired into the UI yet (see the Status 
 - `Lint/` – `Linter` (8 rules, UTF-16 ranges).
 - `Git/` – `GitRunner`/`GitRepository` (system git; async).
 - `Workspace/` – `WorkspaceTree`, `FuzzyMatcher`, `DirectoryWatcher`.
-- `Editor/` – `MultiSelection` (pure multi-cursor logic).
+- `Editor/` – `MultiSelection` (pure multi-cursor logic, not wired) and `EditorStatusController` (live: lint marks, git branch in the window subtitle, ligature font features).
+- `Config/AppConfigStore` writes single keys back to `config.yaml`; `MPFeatureSettings` is its Objective-C face, used by the Settings > Features pane (`MPFeaturesPreferencesViewController`).
 
 Gotcha: directory listings can return `/private/var/...` for `/var/...`. Never compare URLs or strip path prefixes; compare file names or build relative paths while walking.
 

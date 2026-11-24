@@ -58,8 +58,14 @@ final class ThemeService: NSObject {
         let themeCSS = theme.map { ThemeCSS.css(for: $0.variant(isDark: isDark), isDark: isDark) } ?? ""
         let fontCSS = FontCSS.css(settings: FontCSS.settings(bodyName: config.fonts.body, codeName: config.fonts.code, files: fontFiles),
                                   files: fontFiles, baseURL: fontBaseURL)
-        guard !themeCSS.isEmpty || !fontCSS.isEmpty else { return nil }
-        let css = themeCSS + fontCSS
+        // "Ligatures" off: code in the preview shows plain characters (`=>` stays two glyphs).
+        let ligatureCSS = config.editor.ligatures ? "" : """
+
+            code, pre, kbd, samp { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+
+            """
+        guard !themeCSS.isEmpty || !fontCSS.isEmpty || !ligatureCSS.isEmpty else { return nil }
+        let css = themeCSS + fontCSS + ligatureCSS
         let key = "\(theme?.name ?? "")|\(isDark)|\(css.count)|\(css.hashValue)"
         if let last = lastResult, last.key == key { return last.url }
 
