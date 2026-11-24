@@ -26,10 +26,26 @@ final class SidebarNode: NSObject {
 /// chosen it shows the folder of the document.
 @objc(MPSidebarController)
 final class SidebarController: NSObject {
-    /// The folder last chosen (Open Folder) or last used to open a file from a sidebar.
-    /// New windows for files inside it show the same workspace.
-    static var workspaceRoot: URL?
-    private static let visibleKey = "MPSidebarVisible"
+    /// The folder the user opened (File > Open Folder). Remembered between launches.
+    /// Without one there is no sidebar and no tabs; with one, every window whose
+    /// file is inside it shows the sidebar and joins one tab group.
+    @objc static var workspaceRoot: URL? {
+        get {
+            guard let path = UserDefaults.standard.string(forKey: rootKey) else { return nil }
+            var isFolder: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: path, isDirectory: &isFolder), isFolder.boolValue else { return nil }
+            return URL(fileURLWithPath: path, isDirectory: true)
+        }
+        set {
+            if let url = newValue { UserDefaults.standard.set(url.path, forKey: rootKey) }
+            else { UserDefaults.standard.removeObject(forKey: rootKey) }
+            NotificationCenter.default.post(name: workspaceDidChange, object: nil)
+        }
+    }
+    static let workspaceDidChange = Notification.Name("MPWorkspaceDidChange")
+    private static let rootKey = "MPWorkspaceRoot"
+    /// The user hid the sidebar with View > Hide Sidebar.
+    private static let hiddenKey = "MPSidebarHidden"
 
     private weak var document: NSDocument?
     private weak var window: NSWindow?
@@ -51,10 +67,16 @@ final class SidebarController: NSObject {
         super.init()
         install(in: window)
         chooseRootForDocument()
-        sidebarView.isHidden = !UserDefaults.standard.bool(forKey: Self.visibleKey)
+        NotificationCenter.default.addObserver(self, selector: #selector(workspaceChanged),
+                                               name: Self.workspaceDidChange, object: nil)
     }
 
-    deinit { watcher?.stop() }
+    @objc private func workspaceChanged() { chooseRootForDocument() }
+
+    deinit {
+        watcher?.stop()
+        NotificationCenter.default.removeObserver(self)
+    }
 
     // MARK: Layout
 
@@ -110,7 +132,7 @@ final class SidebarController: NSObject {
         scroll.drawsBackground = false
         scroll.autohidesScrollers = true
 
-        emptyLabel.stringValue = "Open a folder to browse its Markdown files."
+        emptyLabel.stringValue = ""
         emptyLabel.textColor = .secondaryLabelColor
         emptyLabel.alignment = .center
         emptyLabel.isHidden = true
@@ -151,73 +173,88 @@ final class SidebarController: NSObject {
 
     @objc var isVisible: Bool { !sidebarView.isHidden }
 
+    /// Shows or hides the sidebar. Does nothing without an opened folder.
     @objc func toggle() {
+        guard rootURL != nil else { return }
         let show = sidebarView.isHidden
-        sidebarView.isHidden = !show
-        UserDefaults.standard.set(show, forKey: Self.visibleKey)
+        UserDefaults.standard.set(!show, forKey: Self.hiddenKey)
+        updateVisibility()
         if show { reload() }
+    }
+
+    /// The sidebar is only there for a document inside the opened folder, unless hidden by the user.
+    private func updateVisibility() {
+        sidebarView.isHidden = rootURL == nil || UserDefaults.standard.bool(forKey: Self.hiddenKey)
     }
 
     // MARK: Choosing the workspace
 
     /// Call after the document's file moved (Save As).
     @objc func documentURLDidChange() {
-        if let root = rootURL, let file = document?.fileURL, Self.isInside(file, folder: root) {
-            selectCurrentDocument()
-        } else {
-            chooseRootForDocument()
-        }
+        chooseRootForDocument()
+        selectCurrentDocument()
     }
 
+    /// The workspace shows for a document inside the opened folder; any other document has no sidebar.
     private func chooseRootForDocument() {
-        let file = document?.fileURL
-        if let shared = Self.workspaceRoot, let file = file, Self.isInside(file, folder: shared) {
-            setRoot(shared)
-        } else {
-            setRoot(file.map(Self.defaultRoot(for:)))
-        }
+        let root = Self.workspaceRoot
+        let inside = Self.isInsideWorkspace(document?.fileURL)
+        setRoot(inside ? root : nil)
     }
 
-    /// The nearest folder above the file that holds a `.git` or `.obsidian` folder
-    /// (a repository or a vault), looking at most 10 levels up. Otherwise the
-    /// folder of the file.
-    static func defaultRoot(for file: URL) -> URL {
-        let fileManager = FileManager.default
-        var folder = file.deletingLastPathComponent()
-        let start = folder
-        for _ in 0..<10 {
-            for marker in [".git", ".obsidian"]
-            where fileManager.fileExists(atPath: folder.appendingPathComponent(marker).path) {
-                return folder
-            }
-            let parent = folder.deletingLastPathComponent()
-            if parent.path == folder.path || parent.path == "/" { break }
-            folder = parent
-        }
-        return start
+    /// True if the file is inside the opened folder. Compares resolved paths, because
+    /// the system may report /private/var for /var.
+    @objc static func isInsideWorkspace(_ file: URL?) -> Bool {
+        guard let file = file, let root = workspaceRoot else { return false }
+        return isInside(file, folder: root)
     }
 
-    @objc func chooseFolder() {
+    /// Asks for a folder, makes it the workspace, and opens a file from it if no open
+    /// document is inside it yet. Used by File > Open Folder.
+    @objc static func presentOpenFolder() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         panel.prompt = "Open Folder"
-        panel.directoryURL = rootURL
+        panel.directoryURL = workspaceRoot
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        Self.workspaceRoot = url
-        setRoot(url)
-        if sidebarView.isHidden { toggle() }
+        openWorkspace(at: url)
     }
 
+    static func openWorkspace(at url: URL) {
+        workspaceRoot = url
+        let controller = NSDocumentController.shared
+        if controller.documents.contains(where: { isInsideWorkspace($0.fileURL) }) { return }
+        // Nothing of this folder is open: open its first note (README or index first).
+        let tree = WorkspaceTree(root: url)
+        let files = tree.allMarkdownFiles(limit: 2000)
+        let preferred = files.first { ["readme.md", "index.md"].contains(($0 as NSString).lastPathComponent.lowercased()) && !$0.contains("/") }
+        guard let relative = preferred ?? files.sorted().first else {
+            let alert = NSAlert()
+            alert.messageText = "No Markdown files in this folder"
+            alert.informativeText = "Add a .md file to “\(url.lastPathComponent)” and it will show here."
+            alert.runModal()
+            return
+        }
+        let file = relative.split(separator: "/").reduce(url) { $0.appendingPathComponent(String($1)) }
+        controller.openDocument(withContentsOf: file, display: true) { _, _, error in
+            if let error = error { NSApp.presentError(error) }
+        }
+    }
+
+    @objc func chooseFolder() { Self.presentOpenFolder() }
+
     private func setRoot(_ url: URL?) {
+        let changed = rootURL?.path != url?.path
         rootURL = url
-        expandedKeys = []
+        if changed { expandedKeys = [] }
         watcher?.stop()
         watcher = nil
         if let url = url {
             watcher = DirectoryWatcher(root: url, latency: 0.4, queue: .main) { [weak self] _ in self?.scheduleReload() }
         }
+        updateVisibility()
         reload()
     }
 
@@ -225,7 +262,6 @@ final class SidebarController: NSObject {
     @objc func quickOpen() {
         guard let root = rootURL else { return }
         QuickOpenController.shared.show(root: root, over: window) { [weak self] url in
-            Self.workspaceRoot = self?.rootURL
             self?.open(url)
         }
     }
@@ -250,7 +286,7 @@ final class SidebarController: NSObject {
         }
         emptyLabel.isHidden = true
         titleLabel.stringValue = root.lastPathComponent.uppercased()
-        guard !sidebarView.isHidden || UserDefaults.standard.bool(forKey: Self.visibleKey) else { return }
+        guard !sidebarView.isHidden else { return }
         let tree = WorkspaceTree(root: root)
         self.tree = tree
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -315,7 +351,6 @@ final class SidebarController: NSObject {
         if node.isFolder {
             if outline.isItemExpanded(node) { outline.collapseItem(node) } else { outline.expandItem(node) }
         } else {
-            Self.workspaceRoot = rootURL
             open(node.url)
         }
     }
@@ -355,7 +390,6 @@ final class SidebarController: NSObject {
             return
         }
         reload()
-        Self.workspaceRoot = rootURL
         open(url)
     }
 

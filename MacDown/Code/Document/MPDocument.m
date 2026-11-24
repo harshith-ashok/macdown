@@ -127,12 +127,18 @@ typedef NS_ENUM(NSUInteger, MPWordCountType) {
 @property (strong) NSArray<NSNumber *> *webViewHeaderLocations;
 @property (strong) NSArray<NSNumber *> *editorHeaderLocations;
 @property (nonatomic) BOOL inLiveScroll;
+// Scroll events from the preview are ignored until this time: they are the
+// echo of our own scrolling or of a page reload, not the user.
+@property (nonatomic) CFTimeInterval ignorePreviewScrollUntil;
+@property (nonatomic) CFTimeInterval lastHeaderRefresh;
 
 // Store file content in initializer until nib is loaded.
 @property (copy) NSString *loadedString;
 
 - (void)scaleWebview;
 - (void)syncScrollers;
+- (void)syncEditorToPreview;
+- (CGFloat)previewYForEditorY:(CGFloat)editorY;
 -(void) updateHeaderLocations;
 
 @end
@@ -141,6 +147,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 {
     __weak MPDocument *weakObj = doc;
     return ^{
+        weakObj.ignorePreviewScrollUntil = CACurrentMediaTime() + 0.7;
         [weakObj scaleWebview];
         if (weakObj.preferences.editorSyncScrolling)
         {
@@ -267,7 +274,8 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     // until the user shows it (View > Show Sidebar).
     self.sidebar = [[MPSidebarController alloc] initWithDocument:self
                                                           window:controller.window];
-    [MPFeatureSettings applyTabbingToWindow:controller.window];
+    [MPFeatureSettings applyTabbingToWindow:controller.window
+                                 forFileURL:self.fileURL];
 
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
@@ -576,11 +584,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
         it.title = self.sidebar.isVisible ?
             NSLocalizedString(@"Hide Sidebar", @"Toggle sidebar menu item") :
             NSLocalizedString(@"Show Sidebar", @"Toggle sidebar menu item");
-        result = YES;
-    }
-    else if (action == @selector(openWorkspaceFolder:))
-    {
-        result = YES;
+        result = self.sidebar.rootURL != nil;
     }
     else if (action == @selector(quickOpen:))
     {
@@ -756,6 +760,8 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 - (void)previewDidFinishLoading:(MPPreviewController *)preview
 {
+    // A fresh page reports scroll events while it settles; they are not the user.
+    self.ignorePreviewScrollUntil = CACurrentMediaTime() + 1.0;
     // If MathJax is on, the on-completion callback is invoked when MathJax
     // is done (-previewMathJaxDidFinish:). Otherwise it is invoked now.
     if (!self.preferences.htmlMathJax)
@@ -806,6 +812,14 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 - (void)previewDidScroll:(MPPreviewController *)preview
 {
     self.lastPreviewScrollTop = preview.scrollY;
+
+    // The user scrolled the preview: move the editor to the same place.
+    if (!self.preferences.editorSyncScrolling
+        || !self.editorVisible || !self.previewVisible
+        || self.previewController.isLoading
+        || CACurrentMediaTime() < self.ignorePreviewScrollUntil)
+        return;
+    [self syncEditorToPreview];
 }
 
 
@@ -911,7 +925,8 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 - (void)showWindows
 {
     NSWindow *window = self.windowControllers.firstObject.window;
-    if (window && MPFeatureSettings.openInTabs && window.tabbedWindows == nil)
+    if (window && MPFeatureSettings.openInTabs && window.tabbedWindows == nil
+        && window.tabbingMode == NSWindowTabbingModePreferred)
     {
         NSWindow *host = nil;
         NSString *identifier = window.tabbingIdentifier;
@@ -942,11 +957,6 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     [self.sidebar toggle];
 }
 
-- (IBAction)openWorkspaceFolder:(id)sender
-{
-    [self.sidebar chooseFolder];
-}
-
 - (IBAction)quickOpen:(id)sender
 {
     [self.sidebar quickOpen];
@@ -970,7 +980,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 {
     // "Open documents in tabs" changed in Settings > Features.
     for (NSWindowController *wc in self.windowControllers)
-        [MPFeatureSettings applyTabbingToWindow:wc.window];
+        [MPFeatureSettings applyTabbingToWindow:wc.window forFileURL:self.fileURL];
 
     MPRenderer *renderer = self.renderer;
 
@@ -1603,12 +1613,24 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 - (void)syncScrollers
 {
+    CGFloat currentEditorY =
+        NSMinY(self.editor.enclosingScrollView.contentView.bounds);
+    CGFloat previewY = [self previewYForEditorY:currentEditorY];
+    // The page will report this scroll back a moment later; do not treat it as the user.
+    self.ignorePreviewScrollUntil = CACurrentMediaTime() + 0.4;
+    [self.previewController scrollToY:previewY];
+}
+
+// Where the preview should be when the editor is scrolled to editorY.
+// Pure: it only reads the cached heading positions and the view sizes.
+- (CGFloat)previewYForEditorY:(CGFloat)editorY
+{
     CGFloat editorContentHeight = ceilf(NSHeight(self.editor.enclosingScrollView.documentView.bounds));
     CGFloat editorVisibleHeight = ceilf(NSHeight(self.editor.enclosingScrollView.contentView.bounds));
     CGFloat previewContentHeight = ceilf(self.previewController.contentHeight);
     CGFloat previewVisibleHeight = ceilf(self.previewController.visibleHeight);
     NSInteger relativeHeaderIndex = -1; // -1 is start of document, before any other header
-    CGFloat currY = NSMinY(self.editor.enclosingScrollView.contentView.bounds);
+    CGFloat currY = editorY;
     CGFloat minY = 0;
     CGFloat maxY = 0;
     
@@ -1673,8 +1695,55 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     }
     
     // Now we scroll percentScrolledBetweenHeaders percent between those two positions in the webview
-    CGFloat previewY = topHeaderY + (bottomHeaderY - topHeaderY) * percentScrolledBetweenHeaders;
-    [self.previewController scrollToY:previewY];
+    return topHeaderY + (bottomHeaderY - topHeaderY) * percentScrolledBetweenHeaders;
+}
+
+// The inverse: scrolls the editor to the place that matches the preview.
+// previewYForEditorY: grows with the editor position, so bisection finds it.
+- (void)syncEditorToPreview
+{
+    NSScrollView *scrollView = self.editor.enclosingScrollView;
+    CGFloat contentHeight = ceilf(NSHeight(scrollView.documentView.bounds));
+    CGFloat visibleHeight = ceilf(NSHeight(scrollView.contentView.bounds));
+    CGFloat maxY = contentHeight - visibleHeight;
+    if (maxY <= 0)
+        return;
+
+    // Heading positions are cached; refresh them at most once a second.
+    CFTimeInterval now = CACurrentMediaTime();
+    if (!_editorHeaderLocations || now - self.lastHeaderRefresh > 1.0)
+    {
+        [self updateHeaderLocations];
+        self.lastHeaderRefresh = now;
+    }
+
+    CGFloat target = self.previewController.scrollY;
+    CGFloat previewMax = MAX(0.0, self.previewController.contentHeight
+                                  - self.previewController.visibleHeight);
+    CGFloat editorY;
+    if (target <= 0.5)
+        editorY = 0;
+    else if (previewMax > 0 && target >= previewMax - 0.5)
+        editorY = maxY;
+    else
+    {
+        CGFloat low = 0, high = maxY;
+        for (int i = 0; i < 28; i++)
+        {
+            CGFloat mid = (low + high) / 2.0;
+            if ([self previewYForEditorY:mid] < target)
+                low = mid;
+            else
+                high = mid;
+        }
+        editorY = (low + high) / 2.0;
+    }
+
+    // Moving the editor must not send it back to the preview.
+    self.shouldHandleBoundsChange = NO;
+    [scrollView.contentView scrollToPoint:NSMakePoint(0.0, round(editorY))];
+    [scrollView reflectScrolledClipView:scrollView.contentView];
+    self.shouldHandleBoundsChange = YES;
 }
 
 - (void)setSplitViewDividerLocation:(CGFloat)ratio

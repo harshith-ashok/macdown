@@ -66,10 +66,29 @@ final class FeatureSettings: NSObject {
         set { UserDefaults.standard.set(newValue, forKey: "MPOpenInTabs") }
     }
 
-    /// Joins or leaves the shared tab group of document windows.
-    @objc(applyTabbingToWindow:) static func applyTabbing(to window: NSWindow) {
-        window.tabbingIdentifier = NSWindow.TabbingIdentifier("MacDownDocument")
-        window.tabbingMode = openInTabs ? .preferred : .disallowed
+    /// Set by File > New Tab: the next new document joins the workspace tab group.
+    @objc static var joinNextDocumentToTabs = false
+    @objc static let workspaceTabIdentifier = "MacDownWorkspace"
+
+    /// Tabs exist only for the opened folder: windows of files inside it share one tab
+    /// group; every other window stands alone, with no tab bar.
+    @objc(applyTabbingToWindow:forFileURL:)
+    static func applyTabbing(to window: NSWindow, for file: URL?) {
+        var inWorkspace = SidebarController.isInsideWorkspace(file)
+        if joinNextDocumentToTabs, file == nil {
+            joinNextDocumentToTabs = false
+            inWorkspace = SidebarController.workspaceRoot != nil
+        }
+        if openInTabs && inWorkspace {
+            window.tabbingIdentifier = workspaceTabIdentifier
+            window.tabbingMode = .preferred
+        } else {
+            // A unique identifier keeps the system from tabbing it with anything.
+            if !window.tabbingIdentifier.hasPrefix("MacDownSolo-") {
+                window.tabbingIdentifier = "MacDownSolo-\(UUID().uuidString)"
+            }
+            window.tabbingMode = .disallowed
+        }
     }
 
     /// The theme named in `config.yaml`, or nil for "none".
