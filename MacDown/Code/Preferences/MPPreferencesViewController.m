@@ -15,6 +15,8 @@ NSString * const MPDidRequestPreviewRenderNotification =
 NSString * const MPDidRequestEditorSetupNotification =
     @"MPDidRequestEditorSetupNotificationName";
 
+static const CGFloat MPPreferencesMinimumWidth = 680.0;
+
 @implementation MPPreferencesViewController
 
 - (id)init
@@ -26,6 +28,29 @@ NSString * const MPDidRequestEditorSetupNotification =
 - (MPPreferences *)preferences
 {
     return [MPPreferences sharedInstance];
+}
+
+- (void)loadView
+{
+    [super loadView];
+    [self centerViewInMinimumWidth];
+}
+
+// MASPreferences sizes the window to the pane's view, and the toolbar needs
+// room for every pane icon. Panes narrower than that make the toolbar collapse
+// into an overflow menu, so every pane is centred in a view of at least this width.
+- (void)centerViewInMinimumWidth
+{
+    NSView *content = self.view;
+    CGFloat width = MAX(NSWidth(content.frame), MPPreferencesMinimumWidth);
+    NSView *container = [[NSView alloc] initWithFrame:
+        NSMakeRect(0.0, 0.0, width, NSHeight(content.frame))];
+    content.frame = NSMakeRect(round((width - NSWidth(content.frame)) / 2.0),
+                               0.0, NSWidth(content.frame),
+                               NSHeight(content.frame));
+    content.autoresizingMask = NSViewMinXMargin | NSViewMaxXMargin;
+    [container addSubview:content];
+    self.view = container;
 }
 
 @end
