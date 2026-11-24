@@ -49,8 +49,10 @@ static const CGFloat MPPreferencesMinimumWidth = 680.0;
                                0.0, NSWidth(content.frame),
                                NSHeight(content.frame));
     content.autoresizingMask = NSViewMinXMargin | NSViewMaxXMargin;
-    [container addSubview:content];
+    // Make the container the controller's view first: adding the old view to it
+    // while it is still the controller's view confuses the responder chain.
     self.view = container;
+    [container addSubview:content];
 }
 
 @end

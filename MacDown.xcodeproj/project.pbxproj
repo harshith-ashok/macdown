@@ -119,6 +119,7 @@
 		770BB49E962A302D0715A6A5 /* libPods-MacDown.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 42F926DD38559C7CEDB6E42F /* libPods-MacDown.a */; };
 		777F6B6BED99B018D2B4470A /* NSURL+Convert.m in Sources */ = {isa = PBXBuildFile; fileRef = 249BA74EBF058FC5F8FEE3BB /* NSURL+Convert.m */; };
 		7A3165EE17B27F055E7E9FDE /* AlertBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDF5CD4D5D6F3B9E2BBD41D4 /* AlertBox.swift */; };
+		7B1775C6D3EB87677860856B /* MPGeneralPreferencesLayoutTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB43D3576B294457C566C72F /* MPGeneralPreferencesLayoutTests.m */; };
 		84110CD34B80356B90289088 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E96175BA12C141E294AD762 /* ThemeManager.swift */; };
 		852D523C1E260A6400BA7162 /* MPTerminalPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 852D523A1E260A6400BA7162 /* MPTerminalPreferencesViewController.m */; };
 		85E24E5C1E5019C00056E696 /* MPToolbarController.m in Sources */ = {isa = PBXBuildFile; fileRef = 85E24E5B1E5019C00056E696 /* MPToolbarController.m */; };
@@ -592,6 +593,7 @@
 		B570A3FC3D7E832EF94EF478 /* MPPreferences+Markdown.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "MPPreferences+Markdown.m"; sourceTree = "<group>"; };
 		B605FD543F9FE6C0AD3194C1 /* PreviewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PreviewTests.swift; sourceTree = "<group>"; };
 		BA1EF571403671197CA19B70 /* MultiSelectionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MultiSelectionTests.swift; sourceTree = "<group>"; };
+		BB43D3576B294457C566C72F /* MPGeneralPreferencesLayoutTests.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = MPGeneralPreferencesLayoutTests.m; sourceTree = "<group>"; };
 		BCB77FB58647EE9FC9C4163B /* PreviewSchemeHandler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PreviewSchemeHandler.swift; sourceTree = "<group>"; };
 		BDA5A8F949D161B2B90ED44E /* MultiSelection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MultiSelection.swift; sourceTree = "<group>"; };
 		BF09368828F152344595306D /* EditorStatusController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditorStatusController.swift; sourceTree = "<group>"; };
@@ -998,6 +1000,7 @@
 				1FFEB31819729F7C00B2254F /* MPAssetTests.m */,
 				1FFEB3261972DAB400B2254F /* MPHTMLTabularizeTests.m */,
 				1FCDCA371944F97800B1F966 /* Supporting Files */,
+				BB43D3576B294457C566C72F /* MPGeneralPreferencesLayoutTests.m */,
 			);
 			path = MacDownTests;
 			sourceTree = "<group>";
@@ -1597,6 +1600,7 @@
 				A879CCD40F81872059237B42 /* FontConfigTests.swift in Sources */,
 				067C801E4BE988B7385730E9 /* AppConfigStoreTests.swift in Sources */,
 				3E3E57D435F9C8626A818C38 /* SidebarTests.swift in Sources */,
+				7B1775C6D3EB87677860856B /* MPGeneralPreferencesLayoutTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -72,19 +72,6 @@
                                     </binding>
                                 </connections>
                             </button>
-                            <button translatesAutoresizingMaskIntoConstraints="NO" id="Vab-4T-IU5">
-                                <rect key="frame" x="16" y="73" width="285" height="18"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="14" id="X3J-8y-4eQ"/>
-                                </constraints>
-                                <buttonCell key="cell" type="check" title="Sync preview scrollbar when editor scrolls" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="2Uj-Sx-FjV">
-                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <connections>
-                                    <binding destination="-2" name="value" keyPath="self.preferences.editorSyncScrolling" id="jyJ-xe-ppE"/>
-                                </connections>
-                            </button>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="fjb-tU-1Kw">
                                 <rect key="frame" x="16" y="53" width="285" height="18"/>
                                 <constraints>
@@ -155,14 +142,11 @@
                         <constraint firstItem="WVd-hz-Dcr" firstAttribute="leading" secondItem="Nma-PL-ZvX" secondAttribute="leading" constant="16" id="CHN-Yp-0Ff"/>
                         <constraint firstAttribute="bottom" secondItem="UZT-HE-EaK" secondAttribute="bottom" constant="11" id="Jkz-15-VH9"/>
                         <constraint firstItem="6Nz-Ft-FbR" firstAttribute="leading" secondItem="Nma-PL-ZvX" secondAttribute="leading" constant="16" id="Orz-1j-PcM"/>
-                        <constraint firstAttribute="trailing" secondItem="Vab-4T-IU5" secondAttribute="trailing" constant="16" id="SSy-nb-3Jk"/>
                         <constraint firstItem="hqr-gd-6gi" firstAttribute="leading" secondItem="Nma-PL-ZvX" secondAttribute="leading" constant="16" id="al2-wQ-QB5"/>
-                        <constraint firstItem="fjb-tU-1Kw" firstAttribute="top" secondItem="Vab-4T-IU5" secondAttribute="bottom" constant="6" id="f6f-eO-7Ut"/>
+                        <constraint firstItem="fjb-tU-1Kw" firstAttribute="top" secondItem="6Nz-Ft-FbR" secondAttribute="bottom" constant="6" id="f6f-eO-7Ut"/>
                         <constraint firstAttribute="trailing" secondItem="hqr-gd-6gi" secondAttribute="trailing" constant="16" id="fC0-Y0-hq7"/>
                         <constraint firstItem="fjb-tU-1Kw" firstAttribute="leading" secondItem="Nma-PL-ZvX" secondAttribute="leading" constant="16" id="jLG-a7-k64"/>
                         <constraint firstItem="UZT-HE-EaK" firstAttribute="leading" secondItem="Nma-PL-ZvX" secondAttribute="leading" constant="16" id="mGA-Ss-CKp"/>
-                        <constraint firstItem="Vab-4T-IU5" firstAttribute="leading" secondItem="Nma-PL-ZvX" secondAttribute="leading" constant="16" id="n6U-m7-4Zo"/>
-                        <constraint firstItem="Vab-4T-IU5" firstAttribute="top" secondItem="6Nz-Ft-FbR" secondAttribute="bottom" constant="6" id="sAw-YS-Rbv"/>
                         <constraint firstItem="6Nz-Ft-FbR" firstAttribute="top" secondItem="hqr-gd-6gi" secondAttribute="bottom" constant="6" id="tnU-Pf-heR"/>
                         <constraint firstAttribute="trailing" secondItem="fjb-tU-1Kw" secondAttribute="trailing" constant="16" id="uQJ-Jy-vPP"/>
                     </constraints>

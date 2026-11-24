@@ -110,7 +110,6 @@ typedef NS_ENUM(NSUInteger, MPWordCountType) {
 @property BOOL manualRender;
 @property BOOL copying;
 @property BOOL printing;
-@property BOOL shouldHandleBoundsChange;
 @property BOOL isPreviewReady;
 @property (strong) NSURL *currentBaseUrl;
 @property CGFloat lastPreviewScrollTop;
@@ -124,22 +123,11 @@ typedef NS_ENUM(NSUInteger, MPWordCountType) {
 @property (nonatomic) BOOL needsToUnregister;
 @property (nonatomic) BOOL alreadyRenderingInWeb;
 @property (nonatomic) BOOL renderToWebPending;
-@property (strong) NSArray<NSNumber *> *webViewHeaderLocations;
-@property (strong) NSArray<NSNumber *> *editorHeaderLocations;
-@property (nonatomic) BOOL inLiveScroll;
-// Scroll events from the preview are ignored until this time: they are the
-// echo of our own scrolling or of a page reload, not the user.
-@property (nonatomic) CFTimeInterval ignorePreviewScrollUntil;
-@property (nonatomic) CFTimeInterval lastHeaderRefresh;
 
 // Store file content in initializer until nib is loaded.
 @property (copy) NSString *loadedString;
 
 - (void)scaleWebview;
-- (void)syncScrollers;
-- (void)syncEditorToPreview;
-- (CGFloat)previewYForEditorY:(CGFloat)editorY;
--(void) updateHeaderLocations;
 
 @end
 
@@ -147,17 +135,10 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 {
     __weak MPDocument *weakObj = doc;
     return ^{
-        weakObj.ignorePreviewScrollUntil = CACurrentMediaTime() + 0.7;
         [weakObj scaleWebview];
-        if (weakObj.preferences.editorSyncScrolling)
-        {
-            [weakObj updateHeaderLocations];
-            [weakObj syncScrollers];
-        }
-        else
-        {
-            [weakObj.previewController scrollToY:weakObj.lastPreviewScrollTop];
-        }
+        // The panes scroll independently: after a re-render the preview just
+        // returns to where it was.
+        [weakObj.previewController scrollToY:weakObj.lastPreviewScrollTop];
     };
 }
 
@@ -255,7 +236,6 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
         return nil;
 
     self.isPreviewReady = NO;
-    self.shouldHandleBoundsChange = YES;
     self.previousSplitRatio = -1.0;
     
     return self;
@@ -327,21 +307,12 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     // apply the editor features.
     [center addObserver:self selector:@selector(didChangeConfig:)
                    name:MPThemeService.didChangeNotificationName object:nil];
-    [center addObserver:self selector:@selector(editorBoundsDidChange:)
-                   name:NSViewBoundsDidChangeNotification
-                 object:self.editor.enclosingScrollView.contentView];
     [center addObserver:self selector:@selector(editorFrameDidChange:)
                    name:NSViewFrameDidChangeNotification object:self.editor];
     [center addObserver:self selector:@selector(didRequestEditorReload:)
                    name:MPDidRequestEditorSetupNotification object:nil];
     [center addObserver:self selector:@selector(didRequestPreviewReload:)
                    name:MPDidRequestPreviewRenderNotification object:nil];
-    [center addObserver:self selector:@selector(willStartLiveScroll:)
-                   name:NSScrollViewWillStartLiveScrollNotification
-                 object:self.editor.enclosingScrollView];
-    [center addObserver:self selector:@selector(didEndLiveScroll:)
-                   name:NSScrollViewDidEndLiveScrollNotification
-                 object:self.editor.enclosingScrollView];
 
     self.needsToUnregister = YES;
 
@@ -760,8 +731,7 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 - (void)previewDidFinishLoading:(MPPreviewController *)preview
 {
-    // A fresh page reports scroll events while it settles; they are not the user.
-    self.ignorePreviewScrollUntil = CACurrentMediaTime() + 1.0;
+
     // If MathJax is on, the on-completion callback is invoked when MathJax
     // is done (-previewMathJaxDidFinish:). Otherwise it is invoked now.
     if (!self.preferences.htmlMathJax)
@@ -812,14 +782,6 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 - (void)previewDidScroll:(MPPreviewController *)preview
 {
     self.lastPreviewScrollTop = preview.scrollY;
-
-    // The user scrolled the preview: move the editor to the same place.
-    if (!self.preferences.editorSyncScrolling
-        || !self.editorVisible || !self.previewVisible
-        || self.previewController.isLoading
-        || CACurrentMediaTime() < self.ignorePreviewScrollUntil)
-        return;
-    [self syncEditorToPreview];
 }
 
 
@@ -1003,36 +965,6 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 {
     if (self.preferences.editorWidthLimited)
         [self adjustEditorInsets];
-}
-
-- (void)willStartLiveScroll:(NSNotification *)notification
-{
-    [self updateHeaderLocations];
-    _inLiveScroll = YES;
-}
-
--(void)didEndLiveScroll:(NSNotification *)notification
-{
-    _inLiveScroll = NO;
-}
-
-- (void)editorBoundsDidChange:(NSNotification *)notification
-{
-    if (!self.shouldHandleBoundsChange)
-        return;
-
-    if (self.preferences.editorSyncScrolling)
-    {
-        @synchronized(self) {
-            self.shouldHandleBoundsChange = NO;
-            if(!_inLiveScroll){
-                [self updateHeaderLocations];
-            }
-            
-            [self syncScrollers];
-            self.shouldHandleBoundsChange = YES;
-        }
-    }
 }
 
 - (void)didRequestEditorReload:(NSNotification *)notification
@@ -1557,193 +1489,6 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
     CGFloat scale = fontSize / defaultSize;
     
     [self.previewController setZoom:scale];
-}
-
--(void) updateHeaderLocations
-{
-    NSMutableArray<NSNumber *> *locations = [NSMutableArray array];
-
-    // Heading positions in the preview are reported by the page itself, in
-    // page coordinates.
-    _webViewHeaderLocations = [self.previewController.headerLocations copy];
-
-    // Next, cache the locations of all of the reference nodes in the editor view.
-    NSInteger characterCount = 0;
-    NSLayoutManager *layoutManager = [self.editor layoutManager];
-    NSArray<NSString *> *documentLines = [self.editor.string componentsSeparatedByString:@"\n"];
-    [locations removeAllObjects];
-
-    // These are the patterns for markdown headers and images respectively. we're only going to
-    // handle images that are not inline with other text/images
-    NSRegularExpression *dashRegex = [NSRegularExpression regularExpressionWithPattern:@"^([-]+)$" options:0 error:nil];
-    NSRegularExpression *headerRegex = [NSRegularExpression regularExpressionWithPattern:@"^(#+)\\s" options:0 error:nil];
-    NSRegularExpression *imgRegex = [NSRegularExpression regularExpressionWithPattern:@"^!\\[[^\\]]*\\]\\([^)]*\\)$" options:0 error:nil];
-    BOOL previousLineHadContent = NO;
-    
-    CGFloat editorContentHeight = ceilf(NSHeight(self.editor.enclosingScrollView.documentView.bounds));
-    CGFloat editorVisibleHeight = ceilf(NSHeight(self.editor.enclosingScrollView.contentView.bounds));
-
-    // We start by splitting our document into lines, and then searching
-    // line by line for headers or images.
-    for (NSInteger lineNumber = 0; lineNumber < [documentLines count]; lineNumber++)
-    {
-        NSString *line = documentLines[lineNumber];
-        
-        if ((previousLineHadContent && [dashRegex numberOfMatchesInString:line options:0 range:NSMakeRange(0, [line length])]) ||
-            [imgRegex numberOfMatchesInString:line options:0 range:NSMakeRange(0, [line length])] ||
-            [headerRegex numberOfMatchesInString:line options:0 range:NSMakeRange(0, [line length])])
-        {
-            // Calculate where this header/image appears vertically in the editor
-            NSRange glyphRange = [layoutManager glyphRangeForCharacterRange:NSMakeRange(characterCount, [line length]) actualCharacterRange:nil];
-            NSRect topRect = [layoutManager boundingRectForGlyphRange:glyphRange inTextContainer:[self.editor textContainer]];
-            CGFloat headerY = NSMidY(topRect);
-
-            if(headerY <= editorContentHeight - editorVisibleHeight){
-                [locations addObject:@(headerY)];
-            }
-        }
-        
-        previousLineHadContent = [line length] && ![dashRegex numberOfMatchesInString:line options:0 range:NSMakeRange(0, [line length])];
-        
-        characterCount += [line length] + 1;
-    }
-
-    _editorHeaderLocations = [locations copy];
-}
-
-- (void)syncScrollers
-{
-    CGFloat currentEditorY =
-        NSMinY(self.editor.enclosingScrollView.contentView.bounds);
-    CGFloat previewY = [self previewYForEditorY:currentEditorY];
-    // The page will report this scroll back a moment later; do not treat it as the user.
-    self.ignorePreviewScrollUntil = CACurrentMediaTime() + 0.4;
-    [self.previewController scrollToY:previewY];
-}
-
-// Where the preview should be when the editor is scrolled to editorY.
-// Pure: it only reads the cached heading positions and the view sizes.
-- (CGFloat)previewYForEditorY:(CGFloat)editorY
-{
-    CGFloat editorContentHeight = ceilf(NSHeight(self.editor.enclosingScrollView.documentView.bounds));
-    CGFloat editorVisibleHeight = ceilf(NSHeight(self.editor.enclosingScrollView.contentView.bounds));
-    CGFloat previewContentHeight = ceilf(self.previewController.contentHeight);
-    CGFloat previewVisibleHeight = ceilf(self.previewController.visibleHeight);
-    NSInteger relativeHeaderIndex = -1; // -1 is start of document, before any other header
-    CGFloat currY = editorY;
-    CGFloat minY = 0;
-    CGFloat maxY = 0;
-    
-    // align the documents at the middle of the screen, except at top/bottom of document
-    CGFloat topTaper = MAX(0, MIN(1.0, currY / editorVisibleHeight));
-    CGFloat bottomTaper = 1.0 - MAX(0, MIN(1.0, (currY - editorContentHeight + 2 * editorVisibleHeight) / editorVisibleHeight));
-    CGFloat adjustmentForScroll = topTaper * bottomTaper * editorVisibleHeight / 2;
-
-    // We start by splitting our document into lines, and then searching
-    // line by line for headers or images.
-    for (NSNumber *headerYNum in _editorHeaderLocations) {
-        CGFloat headerY = [headerYNum floatValue];
-        headerY -= adjustmentForScroll;
-        
-        if (headerY < currY)
-        {
-            // The header is before our current scroll position. the closest
-            // of these will be our first reference node
-            relativeHeaderIndex += 1;
-            minY = headerY;
-        } else if (maxY == 0 && headerY < editorContentHeight - editorVisibleHeight)
-        {
-            // Skip any headers that are within the last screen of the editor.
-            // we'll interpolate to the end of the document in that case.
-            maxY = headerY;
-        }
-    }
-    
-    // Usually, we'll be scrolling between two reference nodes, but toward the end
-    // of the document we'll ignore nodes and reference the end of the document instead
-    BOOL interpolateToEndOfDocument = NO;
-    
-    if (maxY == 0)
-    {
-        // We only have a reference node before our current position,
-        // but not after, so we'll use the end of the document.
-        maxY = editorContentHeight - editorVisibleHeight + adjustmentForScroll;
-        interpolateToEndOfDocument = YES;
-    }
-
-    // We are currently at currY offset, between minY and maxY, which represent
-    // headers indexed by relativeHeaderIndex and relativeHeaderIndex+1.
-    currY = MAX(0, currY - minY);
-    maxY -= minY;
-    minY -= minY;
-    CGFloat percentScrolledBetweenHeaders = MAX(0, MIN(1.0, currY / maxY));
-    
-    // Now that we know where the editor position is relative to two reference nodes,
-    // we need to find the positions of those nodes in the HTML preview
-    CGFloat topHeaderY = 0;
-    CGFloat bottomHeaderY = previewContentHeight - previewVisibleHeight;
-    
-    // Find the Y positions in the preview window that we're scrolling between
-    if ([_webViewHeaderLocations count] > relativeHeaderIndex)
-    {
-        topHeaderY = floorf([_webViewHeaderLocations[relativeHeaderIndex] doubleValue]) - adjustmentForScroll;
-    }
-    
-    if (!interpolateToEndOfDocument && [_webViewHeaderLocations count] > relativeHeaderIndex + 1)
-    {
-        bottomHeaderY = ceilf([_webViewHeaderLocations[relativeHeaderIndex + 1] doubleValue]) - adjustmentForScroll;
-    }
-    
-    // Now we scroll percentScrolledBetweenHeaders percent between those two positions in the webview
-    return topHeaderY + (bottomHeaderY - topHeaderY) * percentScrolledBetweenHeaders;
-}
-
-// The inverse: scrolls the editor to the place that matches the preview.
-// previewYForEditorY: grows with the editor position, so bisection finds it.
-- (void)syncEditorToPreview
-{
-    NSScrollView *scrollView = self.editor.enclosingScrollView;
-    CGFloat contentHeight = ceilf(NSHeight(scrollView.documentView.bounds));
-    CGFloat visibleHeight = ceilf(NSHeight(scrollView.contentView.bounds));
-    CGFloat maxY = contentHeight - visibleHeight;
-    if (maxY <= 0)
-        return;
-
-    // Heading positions are cached; refresh them at most once a second.
-    CFTimeInterval now = CACurrentMediaTime();
-    if (!_editorHeaderLocations || now - self.lastHeaderRefresh > 1.0)
-    {
-        [self updateHeaderLocations];
-        self.lastHeaderRefresh = now;
-    }
-
-    CGFloat target = self.previewController.scrollY;
-    CGFloat previewMax = MAX(0.0, self.previewController.contentHeight
-                                  - self.previewController.visibleHeight);
-    CGFloat editorY;
-    if (target <= 0.5)
-        editorY = 0;
-    else if (previewMax > 0 && target >= previewMax - 0.5)
-        editorY = maxY;
-    else
-    {
-        CGFloat low = 0, high = maxY;
-        for (int i = 0; i < 28; i++)
-        {
-            CGFloat mid = (low + high) / 2.0;
-            if ([self previewYForEditorY:mid] < target)
-                low = mid;
-            else
-                high = mid;
-        }
-        editorY = (low + high) / 2.0;
-    }
-
-    // Moving the editor must not send it back to the preview.
-    self.shouldHandleBoundsChange = NO;
-    [scrollView.contentView scrollToPoint:NSMakePoint(0.0, round(editorY))];
-    [scrollView reflectScrolledClipView:scrollView.contentView];
-    self.shouldHandleBoundsChange = YES;
 }
 
 - (void)setSplitViewDividerLocation:(CGFloat)ratio
