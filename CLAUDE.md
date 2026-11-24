@@ -66,7 +66,7 @@ Headless and unit tested; several are not wired into the UI yet (see the Status 
 - `Git/` – `GitRunner`/`GitRepository` (system git; async).
 - `Workspace/` – `WorkspaceTree`, `FuzzyMatcher`, `DirectoryWatcher`.
 - `Editor/` – `MultiSelection` (pure multi-cursor logic, not wired) and `EditorStatusController` (live: lint marks, git branch in the window subtitle, ligature font features).
-- `Workspace/SidebarController` + `QuickOpenController` (live: per-window sidebar, Quick Open panel; menu items are added in code in `MPMainController.addWorkspaceMenuItems`). Documents open as native window tabs (`MPDocument showWindows`, `MPFeatureSettings.openInTabs`).
+- `Workspace/SidebarController` + `QuickOpenController` (live: per-window sidebar, Quick Open panel; menu items are added in code in `MPMainController.addWorkspaceMenuItems`). Sidebar and tabs exist only for the opened folder (`SidebarController.workspaceRoot`, kept in user defaults): `MPFeatureSettings.applyTabbing` puts files inside it in one tab group and every other window alone. Scroll sync is two-way in `MPDocument` (`syncScrollers`, `syncEditorToPreview`; the second inverts `previewYForEditorY:` by bisection and ignores preview scroll events right after our own scroll or a page load).
 - Look: the app opts out of Liquid Glass with `UIDesignRequiresCompatibility`; keep controls classic and backgrounds solid (no `NSVisualEffectView`, no SF Symbols in chrome).
 - `Config/AppConfigStore` writes single keys back to `config.yaml`; `MPFeatureSettings` is its Objective-C face, used by the Settings > Features pane (`MPFeaturesPreferencesViewController`).
 

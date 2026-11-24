@@ -19,6 +19,7 @@
 #import "MPEditorPreferencesViewController.h"
 #import "MPHtmlPreferencesViewController.h"
 #import "MPFeaturesPreferencesViewController.h"
+#import "MacDown-Swift.h"
 #import "MPTerminalPreferencesViewController.h"
 #import "MPDocument.h"
 
@@ -138,8 +139,12 @@ NS_INLINE void treat()
             initWithTitle:NSLocalizedString(@"Quick Open…", @"File menu")
                    action:@selector(quickOpen:) keyEquivalent:@"j"];
         quick.keyEquivalentModifierMask = cmdOpt;
+        NSMenuItem *close = [[NSMenuItem alloc]
+            initWithTitle:NSLocalizedString(@"Close Folder", @"File menu")
+                   action:@selector(closeWorkspaceFolder:) keyEquivalent:@""];
         [fileMenu insertItem:folder atIndex:index];
-        [fileMenu insertItem:quick atIndex:index + 1];
+        [fileMenu insertItem:close atIndex:index + 1];
+        [fileMenu insertItem:quick atIndex:index + 2];
 
         // New Tab (the "+" button of the tab bar sends the same action).
         NSMenuItem *tab = [[NSMenuItem alloc]
@@ -265,7 +270,28 @@ NS_INLINE void treat()
 // Sent by the tab bar's "+" button and by File > New Tab.
 - (IBAction)newWindowForTab:(id)sender
 {
+    // A new tab only makes sense inside the opened folder's tab group.
+    NSString *key = NSApp.keyWindow.tabbingIdentifier;
+    MPFeatureSettings.joinNextDocumentToTabs =
+        [key isEqualToString:MPFeatureSettings.workspaceTabIdentifier];
     [[NSDocumentController sharedDocumentController] newDocument:sender];
+}
+
+- (IBAction)openWorkspaceFolder:(id)sender
+{
+    [MPSidebarController presentOpenFolder];
+}
+
+- (IBAction)closeWorkspaceFolder:(id)sender
+{
+    MPSidebarController.workspaceRoot = nil;
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)item
+{
+    if (item.action == @selector(closeWorkspaceFolder:))
+        return MPSidebarController.workspaceRoot != nil;
+    return YES;
 }
 
 - (IBAction)showPreferencesWindow:(id)sender
