@@ -97,6 +97,7 @@ typedef NS_ENUM(NSUInteger, MPWordCountType) {
 @property (weak) IBOutlet NSView *editorContainer;
 @property (unsafe_unretained) IBOutlet MPEditorView *editor;
 @property (strong) MPEditorStatusController *editorStatus;
+@property (strong) MPSidebarController *sidebar;
 @property (weak) IBOutlet NSLayoutConstraint *editorPaddingBottom;
 @property (weak) IBOutlet NSView *previewPlaceholder;
 @property (strong) MPPreviewController *previewController;
@@ -261,6 +262,12 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 - (void)windowControllerDidLoadNib:(NSWindowController *)controller
 {
     [super windowControllerDidLoadNib:controller];
+
+    // The workspace sidebar wraps the window content in a split view. Hidden
+    // until the user shows it (View > Show Sidebar).
+    self.sidebar = [[MPSidebarController alloc] initWithDocument:self
+                                                          window:controller.window];
+    [MPFeatureSettings applyTabbingToWindow:controller.window];
 
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
@@ -562,6 +569,22 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
                               @"Toggle reveal toolbar") :
             NSLocalizedString(@"Show Toolbar",
                               @"Toggle reveal toolbar");
+    }
+    else if (action == @selector(toggleWorkspaceSidebar:))
+    {
+        NSMenuItem *it = (NSMenuItem *)item;
+        it.title = self.sidebar.isVisible ?
+            NSLocalizedString(@"Hide Sidebar", @"Toggle sidebar menu item") :
+            NSLocalizedString(@"Show Sidebar", @"Toggle sidebar menu item");
+        result = YES;
+    }
+    else if (action == @selector(openWorkspaceFolder:))
+    {
+        result = YES;
+    }
+    else if (action == @selector(quickOpen:))
+    {
+        result = self.sidebar.rootURL != nil;
     }
     else if (action == @selector(togglePreviewPane:))
     {
@@ -883,6 +906,52 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 #pragma mark - Notification handler
 
+// With "Open documents in tabs" on, a new document window joins the tab group
+// of the frontmost document window instead of opening on its own.
+- (void)showWindows
+{
+    NSWindow *window = self.windowControllers.firstObject.window;
+    if (window && MPFeatureSettings.openInTabs && window.tabbedWindows == nil)
+    {
+        NSWindow *host = nil;
+        NSString *identifier = window.tabbingIdentifier;
+        for (NSWindow *other in NSApp.orderedWindows)
+        {
+            if (other != window && other.isVisible
+                && other.windowController.document != nil
+                && [other.tabbingIdentifier isEqualToString:identifier])
+            {
+                host = other;
+                break;
+            }
+        }
+        if (host)
+            [host addTabbedWindow:window ordered:NSWindowAbove];
+    }
+    [super showWindows];
+}
+
+- (void)setFileURL:(NSURL *)fileURL
+{
+    [super setFileURL:fileURL];
+    [self.sidebar documentURLDidChange];
+}
+
+- (IBAction)toggleWorkspaceSidebar:(id)sender
+{
+    [self.sidebar toggle];
+}
+
+- (IBAction)openWorkspaceFolder:(id)sender
+{
+    [self.sidebar chooseFolder];
+}
+
+- (IBAction)quickOpen:(id)sender
+{
+    [self.sidebar quickOpen];
+}
+
 - (void)didChangeConfig:(NSNotification *)notification
 {
     [self render:nil];
@@ -899,6 +968,10 @@ static void (^MPGetPreviewLoadingCompletionHandler(MPDocument *doc))()
 
 - (void)userDefaultsDidChange:(NSNotification *)notification
 {
+    // "Open documents in tabs" changed in Settings > Features.
+    for (NSWindowController *wc in self.windowControllers)
+        [MPFeatureSettings applyTabbingToWindow:wc.window];
+
     MPRenderer *renderer = self.renderer;
 
     // Force update if we're switching from manual to auto, or renderer settings

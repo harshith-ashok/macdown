@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Yams
 
@@ -58,6 +59,19 @@ final class FeatureSettings: NSObject {
         get { ThemeService.shared.currentConfig().charts.vegaLiteRemoteData }
         set { write(newValue, ["charts", "vega-lite-remote-data"]) }
     }
+    /// Open documents as tabs of one window (the default) instead of separate windows.
+    /// Kept in the user defaults: it is a per-Mac window preference, not content config.
+    @objc static var openInTabs: Bool {
+        get { UserDefaults.standard.object(forKey: "MPOpenInTabs") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "MPOpenInTabs") }
+    }
+
+    /// Joins or leaves the shared tab group of document windows.
+    @objc(applyTabbingToWindow:) static func applyTabbing(to window: NSWindow) {
+        window.tabbingIdentifier = NSWindow.TabbingIdentifier("MacDownDocument")
+        window.tabbingMode = openInTabs ? .preferred : .disallowed
+    }
+
     /// The theme named in `config.yaml`, or nil for "none".
     @objc static var themeName: String? {
         get { ThemeService.shared.currentConfig().theme }

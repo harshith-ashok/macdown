@@ -9,6 +9,7 @@
 
 @interface MPFeaturesPreferencesViewController ()
 @property (strong) NSPopUpButton *themePopUp;
+@property (strong) NSButton *openInTabs;
 @property (strong) NSButton *ligatures;
 @property (strong) NSButton *lint;
 @property (strong) NSButton *git;
@@ -32,9 +33,7 @@ static NSString *MPNoThemeTitle()
 
 - (NSImage *)toolbarItemImage
 {
-    NSImage *image = [NSImage imageWithSystemSymbolName:@"slider.horizontal.3"
-                               accessibilityDescription:nil];
-    return image ?: [NSImage imageNamed:NSImageNameAdvanced];
+    return [NSImage imageNamed:NSImageNameAdvanced];
 }
 
 - (NSString *)toolbarItemLabel
@@ -102,6 +101,13 @@ static NSString *MPNoThemeTitle()
     [stack addArrangedSubview:themeNote];
     [stack setCustomSpacing:18.0 afterView:themeNote];
 
+    self.openInTabs = [self checkboxWithTitle:
+        NSLocalizedString(@"Open documents in tabs", @"")
+        note:NSLocalizedString(@"New documents and files opened from the "
+                               @"sidebar join the current window as tabs.",
+                               @"")
+        action:@selector(toggleOpenInTabs:) stack:stack];
+
     self.ligatures = [self checkboxWithTitle:
         NSLocalizedString(@"Ligatures in code", @"")
         note:NSLocalizedString(@"Combine characters such as => and != in "
@@ -158,6 +164,8 @@ static NSString *MPNoThemeTitle()
     if (current.length)
         [self.themePopUp selectItemWithTitle:current];
 
+    self.openInTabs.state = MPFeatureSettings.openInTabs
+        ? NSControlStateValueOn : NSControlStateValueOff;
     self.ligatures.state = MPFeatureSettings.ligatures
         ? NSControlStateValueOn : NSControlStateValueOff;
     self.lint.state = MPFeatureSettings.lintEnabled
@@ -175,6 +183,11 @@ static NSString *MPNoThemeTitle()
     NSString *title = sender.selectedItem.title;
     MPFeatureSettings.themeName =
         [title isEqualToString:MPNoThemeTitle()] ? nil : title;
+}
+
+- (void)toggleOpenInTabs:(NSButton *)sender
+{
+    MPFeatureSettings.openInTabs = sender.state == NSControlStateValueOn;
 }
 
 - (void)toggleLigatures:(NSButton *)sender

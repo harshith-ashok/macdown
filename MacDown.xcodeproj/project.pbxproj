@@ -102,6 +102,7 @@
 		3993B80A704AD80B8A41729A /* CMarkEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DED5592B20CE84DDA30B29B /* CMarkEngine.swift */; };
 		3D10142F8C3C4231316F34F3 /* FuzzyMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3968D1739E10A1F781C4CD /* FuzzyMatcher.swift */; };
 		3E008F34441BC95D14925958 /* KaTeX in Resources */ = {isa = PBXBuildFile; fileRef = AF444E5BC750D5724DEAFA71 /* KaTeX */; };
+		3E3E57D435F9C8626A818C38 /* SidebarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7DDF90E70CF4CD9916F56C6 /* SidebarTests.swift */; };
 		444378B12D0B6FCE0AA8B661 /* MultiSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1EF571403671197CA19B70 /* MultiSelectionTests.swift */; };
 		484D32008C1C611D97A08E18 /* Yams in Frameworks */ = {isa = PBXBuildFile; productRef = B07459FFC34C9D68445055FF /* Yams */; };
 		4A2AF5910CABE72FDFAF151A /* MPFeaturesPreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 49BFF94B097B9B279758C71B /* MPFeaturesPreferencesViewController.m */; };
@@ -130,6 +131,7 @@
 		A879CCD40F81872059237B42 /* FontConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D28FC959B4639D3B2BD54413 /* FontConfigTests.swift */; };
 		AC2A677108794A44FEC75581 /* Snapshots in Resources */ = {isa = PBXBuildFile; fileRef = A21731D80F883C955BE96B61 /* Snapshots */; };
 		ACCDEB9E150623DA8BFCF4AC /* MarkdownPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 343137F5EB3D0BC8A6019D7E /* MarkdownPerformanceTests.swift */; };
+		AEFF9CF4EE836E97B4672F10 /* QuickOpenController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83139408EE99C5FCB85D99AE /* QuickOpenController.swift */; };
 		AFF7CD859FD7BB05D4CEC8C8 /* GitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F586EC703D31B54F45CD8E15 /* GitModels.swift */; };
 		B05D10BB97EEE473F022ABD4 /* PreviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418B7F9F593F6F7111EAECA0 /* PreviewController.swift */; };
 		B5C5C1666A506FEA86435D25 /* libPods-macdown-cmd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 263367245B2D78A42C2F19D7 /* libPods-macdown-cmd.a */; };
@@ -140,6 +142,7 @@
 		CA17C5EBA695E065AAC07AEF /* Diagrams in Resources */ = {isa = PBXBuildFile; fileRef = D12E31E08EB0017E026177A9 /* Diagrams */; };
 		D465E6978E07BFF9EC260338 /* DirectoryWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33E168F75B211C6F1FD26E69 /* DirectoryWatcher.swift */; };
 		D6F2416B8ABAF76120303FAF /* PreviewSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB77FB58647EE9FC9C4163B /* PreviewSchemeHandler.swift */; };
+		EBE280912D1830B6808EB430 /* SidebarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D253E1A130020F2A6AC2F945 /* SidebarController.swift */; };
 		EBFE3157737058F5A63699C8 /* libPods-MacDownTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C949FDE45493AE77DAD9BF4 /* libPods-MacDownTests.a */; };
 		ED6E9BC8EF676B0253A1AC9E /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = E991F3DACF34FC08A20DE562 /* Fonts */; };
 		EDDC572136E307B0216CEFDD /* MathPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F94F6A2763E7688ED58DCC0B /* MathPreviewTests.swift */; };
@@ -566,6 +569,7 @@
 		6EACDCDDB85D62033AC139A0 /* MarkdownExtensionMaskerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownExtensionMaskerTests.swift; sourceTree = "<group>"; };
 		7A8EA75FA95818275755F0B6 /* Pods-macdown-cmd.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-macdown-cmd.release.xcconfig"; path = "Pods/Target Support Files/Pods-macdown-cmd/Pods-macdown-cmd.release.xcconfig"; sourceTree = "<group>"; };
 		80AF0F089878ED26203CC848 /* AppConfigTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
+		83139408EE99C5FCB85D99AE /* QuickOpenController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickOpenController.swift; sourceTree = "<group>"; };
 		852D52391E260A6400BA7162 /* MPTerminalPreferencesViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MPTerminalPreferencesViewController.h; sourceTree = "<group>"; };
 		852D523A1E260A6400BA7162 /* MPTerminalPreferencesViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MPTerminalPreferencesViewController.m; sourceTree = "<group>"; };
 		85E24E5A1E5019C00056E696 /* MPToolbarController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MPToolbarController.h; path = Code/Application/MPToolbarController.h; sourceTree = "<group>"; };
@@ -596,6 +600,7 @@
 		CDF5CD4D5D6F3B9E2BBD41D4 /* AlertBox.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AlertBox.swift; sourceTree = "<group>"; };
 		D01897957297417C3214F59C /* MarkdownExtensionMasker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MarkdownExtensionMasker.swift; sourceTree = "<group>"; };
 		D12E31E08EB0017E026177A9 /* Diagrams */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder; name = Diagrams; path = MacDown/Resources/Diagrams; sourceTree = "<group>"; };
+		D253E1A130020F2A6AC2F945 /* SidebarController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SidebarController.swift; sourceTree = "<group>"; };
 		D28BFF5163D678567C212B2D /* WorkspaceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceTests.swift; sourceTree = "<group>"; };
 		D28FC959B4639D3B2BD54413 /* FontConfigTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FontConfigTests.swift; sourceTree = "<group>"; };
 		E6A0E6030B9B5EC33E3F4051 /* LinterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LinterTests.swift; sourceTree = "<group>"; };
@@ -624,6 +629,7 @@
 		E77E5D72241C935100699B5A /* da-DK */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "da-DK"; path = "Localization/da-DK.lproj/MPDocument.strings"; sourceTree = "<group>"; };
 		E7D458CB241C933800411A36 /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fi; path = Localization/fi.lproj/MainMenu.strings; sourceTree = "<group>"; };
 		E7DD09F1241C9368008FBC25 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = Localization/da.lproj/MainMenu.strings; sourceTree = "<group>"; };
+		E7DDF90E70CF4CD9916F56C6 /* SidebarTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SidebarTests.swift; sourceTree = "<group>"; };
 		E991F3DACF34FC08A20DE562 /* Fonts */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder; name = Fonts; path = MacDown/Resources/Fonts; sourceTree = "<group>"; };
 		EAB346773DDBC1AC069870A3 /* CMarkEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CMarkEngineTests.swift; sourceTree = "<group>"; };
 		EC343095C1C70E0C92C9B280 /* AppConfigStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigStore.swift; sourceTree = "<group>"; };
@@ -689,6 +695,8 @@
 				33E168F75B211C6F1FD26E69 /* DirectoryWatcher.swift */,
 				9D3968D1739E10A1F781C4CD /* FuzzyMatcher.swift */,
 				AB9E7D1A61A32ED8857FC26D /* WorkspaceTree.swift */,
+				83139408EE99C5FCB85D99AE /* QuickOpenController.swift */,
+				D253E1A130020F2A6AC2F945 /* SidebarController.swift */,
 			);
 			name = Workspace;
 			path = Workspace;
@@ -1057,6 +1065,7 @@
 				1D57FA46167F7FBB27FB11D1 /* DiagramPreviewTests.swift */,
 				D28FC959B4639D3B2BD54413 /* FontConfigTests.swift */,
 				5998E07DEF5D3A088492B330 /* AppConfigStoreTests.swift */,
+				E7DDF90E70CF4CD9916F56C6 /* SidebarTests.swift */,
 			);
 			name = SwiftTests;
 			path = MacDownTests/Swift;
@@ -1555,6 +1564,8 @@
 				A4D19EA5CD899FABC6D1C298 /* AppConfigStore.swift in Sources */,
 				6B7D521AA1C4407589776EAE /* EditorStatusController.swift in Sources */,
 				4A2AF5910CABE72FDFAF151A /* MPFeaturesPreferencesViewController.m in Sources */,
+				AEFF9CF4EE836E97B4672F10 /* QuickOpenController.swift in Sources */,
+				EBE280912D1830B6808EB430 /* SidebarController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1585,6 +1596,7 @@
 				06B186E97D02DA48F0CEB05C /* DiagramPreviewTests.swift in Sources */,
 				A879CCD40F81872059237B42 /* FontConfigTests.swift in Sources */,
 				067C801E4BE988B7385730E9 /* AppConfigStoreTests.swift in Sources */,
+				3E3E57D435F9C8626A818C38 /* SidebarTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

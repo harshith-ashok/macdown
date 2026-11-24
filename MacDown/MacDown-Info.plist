@@ -137,6 +137,8 @@
 	<string>https://macdown.uranusjr.com/sparkle/macdown/stable/appcast.xml</string>
 	<key>SUPublicDSAKeyFile</key>
 	<string>dsa_pub.pem</string>
+	<key>UIDesignRequiresCompatibility</key>
+	<true/>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

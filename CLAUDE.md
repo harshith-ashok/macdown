@@ -66,6 +66,8 @@ Headless and unit tested; several are not wired into the UI yet (see the Status 
 - `Git/` – `GitRunner`/`GitRepository` (system git; async).
 - `Workspace/` – `WorkspaceTree`, `FuzzyMatcher`, `DirectoryWatcher`.
 - `Editor/` – `MultiSelection` (pure multi-cursor logic, not wired) and `EditorStatusController` (live: lint marks, git branch in the window subtitle, ligature font features).
+- `Workspace/SidebarController` + `QuickOpenController` (live: per-window sidebar, Quick Open panel; menu items are added in code in `MPMainController.addWorkspaceMenuItems`). Documents open as native window tabs (`MPDocument showWindows`, `MPFeatureSettings.openInTabs`).
+- Look: the app opts out of Liquid Glass with `UIDesignRequiresCompatibility`; keep controls classic and backgrounds solid (no `NSVisualEffectView`, no SF Symbols in chrome).
 - `Config/AppConfigStore` writes single keys back to `config.yaml`; `MPFeatureSettings` is its Objective-C face, used by the Settings > Features pane (`MPFeaturesPreferencesViewController`).
 
 Gotcha: directory listings can return `/private/var/...` for `/var/...`. Never compare URLs or strip path prefixes; compare file names or build relative paths while walking.
