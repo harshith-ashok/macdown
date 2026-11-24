@@ -101,8 +101,73 @@ NS_INLINE void treat()
 
 @synthesize preferencesWindowController = _preferencesWindowController;
 
+// Adds the workspace items to the File and View menus. Done in code so the
+// localized main menu nib stays untouched.
+- (void)addWorkspaceMenuItems
+{
+    NSMenu *main = NSApp.mainMenu;
+    NSMenu *fileMenu = nil;
+    NSMenu *viewMenu = nil;
+    for (NSMenuItem *top in main.itemArray)
+    {
+        for (NSMenuItem *item in top.submenu.itemArray)
+        {
+            if (item.action == @selector(openDocument:))
+                fileMenu = top.submenu;
+            if (item.action == @selector(render:))
+                viewMenu = top.submenu;
+        }
+    }
+
+    NSEventModifierFlags cmdOpt =
+        NSEventModifierFlagCommand | NSEventModifierFlagOption;
+    if (fileMenu)
+    {
+        NSInteger index = 0;
+        for (NSMenuItem *item in fileMenu.itemArray)
+        {
+            index++;
+            if (item.action == @selector(openDocument:))
+                break;
+        }
+        NSMenuItem *folder = [[NSMenuItem alloc]
+            initWithTitle:NSLocalizedString(@"Open Folder…", @"File menu")
+                   action:@selector(openWorkspaceFolder:) keyEquivalent:@"o"];
+        folder.keyEquivalentModifierMask = cmdOpt;
+        NSMenuItem *quick = [[NSMenuItem alloc]
+            initWithTitle:NSLocalizedString(@"Quick Open…", @"File menu")
+                   action:@selector(quickOpen:) keyEquivalent:@"j"];
+        quick.keyEquivalentModifierMask = cmdOpt;
+        [fileMenu insertItem:folder atIndex:index];
+        [fileMenu insertItem:quick atIndex:index + 1];
+
+        // New Tab (the "+" button of the tab bar sends the same action).
+        NSMenuItem *tab = [[NSMenuItem alloc]
+            initWithTitle:NSLocalizedString(@"New Tab", @"File menu")
+                   action:@selector(newWindowForTab:) keyEquivalent:@"t"];
+        for (NSUInteger i = 0; i < fileMenu.itemArray.count; i++)
+        {
+            if (fileMenu.itemArray[i].action == @selector(newDocument:))
+            {
+                [fileMenu insertItem:tab atIndex:i + 1];
+                break;
+            }
+        }
+    }
+    if (viewMenu)
+    {
+        NSMenuItem *sidebar = [[NSMenuItem alloc]
+            initWithTitle:NSLocalizedString(@"Show Sidebar", @"View menu")
+                   action:@selector(toggleWorkspaceSidebar:) keyEquivalent:@"s"];
+        sidebar.keyEquivalentModifierMask = cmdOpt;
+        [viewMenu insertItem:sidebar atIndex:0];
+        [viewMenu insertItem:[NSMenuItem separatorItem] atIndex:1];
+    }
+}
+
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
+    [self addWorkspaceMenuItems];
     [[NSAppleEventManager sharedAppleEventManager]
         setEventHandler:self
             andSelector:@selector(openUrlSchemeAppleEvent:withReplyEvent:)
@@ -195,6 +260,12 @@ NS_INLINE void treat()
             [[WC alloc] initWithViewControllers:vcs title:title];
     }
     return _preferencesWindowController;
+}
+
+// Sent by the tab bar's "+" button and by File > New Tab.
+- (IBAction)newWindowForTab:(id)sender
+{
+    [[NSDocumentController sharedDocumentController] newDocument:sender];
 }
 
 - (IBAction)showPreferencesWindow:(id)sender
