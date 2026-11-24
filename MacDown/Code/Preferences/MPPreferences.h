@@ -40,7 +40,6 @@ extern NSString * const MPDidDetectFreshInstallationNotification;
 @property (assign) BOOL editorConvertTabs;
 @property (assign) BOOL editorInsertPrefixInBlock;
 @property (assign) BOOL editorCompleteMatchingCharacters;
-@property (assign) BOOL editorSyncScrolling;
 @property (assign) BOOL editorSmartHome;
 @property (assign) NSString *editorStyleName;
 @property (assign) CGFloat editorHorizontalInset;

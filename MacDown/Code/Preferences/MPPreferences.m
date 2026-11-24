@@ -30,7 +30,6 @@ static CGFloat    const kMPDefaultEditorFontPointSize = 14.0;
 static CGFloat    const kMPDefaultEditorHorizontalInset = 15.0;
 static CGFloat    const kMPDefaultEditorVerticalInset = 30.0;
 static CGFloat    const kMPDefaultEditorLineSpacing = 3.0;
-static BOOL       const kMPDefaultEditorSyncScrolling = YES;
 static NSString * const kMPDefaultEditorThemeName = @"Tomorrow+";
 static NSString * const kMPDefaultHtmlStyleName = @"GitHub2";
 
@@ -94,7 +93,6 @@ static NSString * const kMPDefaultHtmlStyleName = @"GitHub2";
 @dynamic editorConvertTabs;
 @dynamic editorInsertPrefixInBlock;
 @dynamic editorCompleteMatchingCharacters;
-@dynamic editorSyncScrolling;
 @dynamic editorSmartHome;
 @dynamic editorStyleName;
 @dynamic editorHorizontalInset;
@@ -255,7 +253,6 @@ static NSString * const kMPDefaultHtmlStyleName = @"GitHub2";
     self.editorHorizontalInset = kMPDefaultEditorHorizontalInset;
     self.editorVerticalInset = kMPDefaultEditorVerticalInset;
     self.editorLineSpacing = kMPDefaultEditorLineSpacing;
-    self.editorSyncScrolling = kMPDefaultEditorSyncScrolling;
     self.htmlStyleName = kMPDefaultHtmlStyleName;
     self.htmlDefaultDirectoryUrl = [NSURL fileURLWithPath:NSHomeDirectory()
                                               isDirectory:YES];
